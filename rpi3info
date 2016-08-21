@@ -1,0 +1,39 @@
+#!/bin/bash
+echo "$(date) @ $(hostname)"
+echo "---------------------"
+echo " SYSTEM "
+echo "---------------------"
+echo "$(uname -a)"
+echo "HOSTNAME: $(hostname)"
+echo "$(ps aux  | awk 'BEGIN { sum = 0 }  { sum += sprintf("%f",$3) }; END { printf "CPU Usage: " "%.2f" "%%", sum}')"
+echo "$(free -h | awk  '/Mem:/{print "RAM Usage: " $2 "(Used:"$3"/Free:"$4")"}')"
+echo "---------------------"
+echo " NETWORK "
+echo "---------------------"
+echo "$(sudo netstat -tpn)"
+echo "---------------------"
+echo " TEMPERATURES "
+echo "---------------------"
+cpuTemp0=$(cat /sys/class/thermal/thermal_zone0/temp)
+cpuTemp1=$(($cpuTemp0/1000))
+cpuTemp2=$(($cpuTemp0/100))
+cpuTempM=$(($cpuTemp2 % $cpuTemp1))
+ 
+gpuTemp0=$(/opt/vc/bin/vcgencmd measure_temp)
+gpuTemp0=${gpuTemp0//\'/°}
+gpuTemp0=${gpuTemp0//temp=/}
+ 
+echo CPU Temp: $cpuTemp1"."$cpuTempM"°C"
+echo GPU Temp: $gpuTemp0
+echo "---------------------"
+echo " VOLTAGES "
+echo "---------------------"
+for id in core sdram_c sdram_i sdram_p ; do
+     echo -e "$id:\t$(vcgencmd measure_volts $id)";
+done
+echo "---------------------"
+echo " FREQUENCIES "
+echo "---------------------"
+for src in arm core h264 isp v3d uart pwm emmc pixel vec hdmi dpi ; do
+    echo -e "$src:\t$(/opt/vc/bin/vcgencmd measure_clock $src)"
+done
